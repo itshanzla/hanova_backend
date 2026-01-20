@@ -3,29 +3,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/main.js",
+      "src": "api/index.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api-docs/(.*)",
-      "dest": "dist/main.js"
-    },
-    {
-      "src": "/api-docs",
-      "dest": "dist/main.js"
-    },
-    {
       "src": "/(.*)",
-      "dest": "dist/main.js",
-      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, X-Requested-With"
-      }
+      "dest": "api/index.ts"
     }
   ]
 }
