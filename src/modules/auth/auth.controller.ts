@@ -271,7 +271,8 @@ export class AuthController {
     const redirectUrl =
       this.configService.get<string>('FRONTEND_REDIRECT_URL') ||
       'http://localhost:5173/auth/callback';
-    const fullRedirectUrl = `${redirectUrl}?accessToken=${result.data.accessToken}&refreshToken=${result.data.refreshToken}`;
+
+    const fullRedirectUrl = `${redirectUrl}?accessToken=${result.data.accessToken}&refreshToken=${result.data.refreshToken}&isNewUser=${result.data.isNewUser}`;
 
     return res.redirect(fullRedirectUrl);
   }
@@ -292,7 +293,8 @@ export class AuthController {
     const redirectUrl =
       this.configService.get<string>('FRONTEND_REDIRECT_URL') ||
       'http://localhost:5173/auth/callback';
-    const fullRedirectUrl = `${redirectUrl}?accessToken=${result.data.accessToken}&refreshToken=${result.data.refreshToken}`;
+
+    const fullRedirectUrl = `${redirectUrl}?accessToken=${result.data.accessToken}&refreshToken=${result.data.refreshToken}&isNewUser=${result.data.isNewUser}`;
 
     return res.redirect(fullRedirectUrl);
   }

@@ -286,16 +286,18 @@ export class AuthService {
     }
 
     let user = await this.userService.findByEmail(email);
+    let isNewUser = false;
 
     if (!user) {
+      isNewUser = true;
       user = await this.userService.create({
         name: name || email.split('@')[0],
         email,
         password: await bcrypt.hash(providerId || email, 10),
-        role: UserRole.USER, 
-        isEmailVerified: true, 
-        authProvider, 
-        socialProviderId: providerId, 
+        role: UserRole.USER,
+        isEmailVerified: true,
+        authProvider,
+        socialProviderId: providerId,
         profilePicture: picture || null,
       });
 
@@ -312,6 +314,7 @@ export class AuthService {
       {
         accessToken,
         refreshToken,
+        isNewUser,
         user: {
           id: user.id,
           name: user.name,
@@ -321,7 +324,7 @@ export class AuthService {
           profilePicture: user.profilePicture,
         },
       },
-      'Social login successful',
+      isNewUser ? 'Account created successfully' : 'Social login successful',
     );
   }
 }
