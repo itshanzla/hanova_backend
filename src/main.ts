@@ -1,12 +1,21 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ConfigService } from '@nestjs/config';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+let app: INestApplication;
+
+async function createApp(): Promise<INestApplication> {
+  if (app) {
+    return app;
+  }
+
+  app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
 
   const configService = app.get(ConfigService);
 
@@ -24,7 +33,7 @@ async function bootstrap() {
   const allowedOrigins = configService
     .get<string>('ALLOWED_ORIGINS')
     ?.split(',')
-    .map(origin => origin.trim()) || ['http://localhost:5173', 'http://localhost:3001'];
+    .map((origin) => origin.trim()) || ['http://localhost:5173', 'http://localhost:3001'];
 
   app.enableCors({
     origin: allowedOrigins,
@@ -42,25 +51,25 @@ async function bootstrap() {
     .setTitle('Havnova API')
     .setDescription(
       `# Havnova Backend API\n\n` +
-      `## API Information\n` +
-      `- **Backend URL**: ${backendUrl}\n` +
-      `- **Frontend URL**: ${frontendUrl}\n` +
-      `- **API Documentation**: ${backendUrl}/api-docs\n\n` +
-      `## Social Login URLs\n` +
-      `- **Google Login**: [${backendUrl}/auth/google](${backendUrl}/auth/google)\n` +
-      `- **Facebook Login**: [${backendUrl}/auth/facebook](${backendUrl}/auth/facebook)\n\n` +
-      `## Authentication Methods\n` +
-      `### Email/Password Authentication\n` +
-      `1. Sign up with email and password\n` +
-      `2. Verify email with OTP\n` +
-      `3. Login with credentials\n\n` +
-      `### Social Login (Google/Facebook)\n` +
-      `1. Click on the social login link above\n` +
-      `2. Authorize with provider\n` +
-      `3. Auto-register or auto-login\n` +
-      `4. Redirect to frontend with JWT tokens\n\n` +
-      `## Authorization\n` +
-      `Use the **Authorize** button above to add your JWT token for protected endpoints.`
+        `## API Information\n` +
+        `- **Backend URL**: ${backendUrl}\n` +
+        `- **Frontend URL**: ${frontendUrl}\n` +
+        `- **API Documentation**: ${backendUrl}/api-docs\n\n` +
+        `## Social Login URLs\n` +
+        `- **Google Login**: [${backendUrl}/auth/google](${backendUrl}/auth/google)\n` +
+        `- **Facebook Login**: [${backendUrl}/auth/facebook](${backendUrl}/auth/facebook)\n\n` +
+        `## Authentication Methods\n` +
+        `### Email/Password Authentication\n` +
+        `1. Sign up with email and password\n` +
+        `2. Verify email with OTP\n` +
+        `3. Login with credentials\n\n` +
+        `### Social Login (Google/Facebook)\n` +
+        `1. Click on the social login link above\n` +
+        `2. Authorize with provider\n` +
+        `3. Auto-register or auto-login\n` +
+        `4. Redirect to frontend with JWT tokens\n\n` +
+        `## Authorization\n` +
+        `Use the **Authorize** button above to add your JWT token for protected endpoints.`,
     )
     .setVersion('1.0')
     .addTag('Authentication', 'User authentication and authorization endpoints')
@@ -145,6 +154,27 @@ async function bootstrap() {
     `,
   });
 
-  await app.listen(port);
+  return app;
 }
-bootstrap();
+
+// Local development
+async function bootstrap() {
+  const app = await createApp();
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT') || 3000;
+  await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
+}
+
+// Vercel serverless handler
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const app = await createApp();
+  await app.init();
+  const expressApp = app.getHttpAdapter().getInstance();
+  return expressApp(req, res);
+}
+
+// Run bootstrap only in non-Vercel environment
+if (!process.env.VERCEL) {
+  bootstrap();
+}
