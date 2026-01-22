@@ -3,7 +3,6 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 export class CreateUsersTable1768818979850 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        // Create users_role_enum type if it doesn't exist
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "users_role_enum" AS ENUM('admin', 'host', 'user');
@@ -12,7 +11,6 @@ export class CreateUsersTable1768818979850 implements MigrationInterface {
             END $$;
         `);
 
-        // Create users table if it doesn't exist
         await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "users" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -28,7 +26,6 @@ export class CreateUsersTable1768818979850 implements MigrationInterface {
             );
         `);
 
-        // Create index on email for faster lookups
         await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_users_email" ON "users" ("email");
         `);

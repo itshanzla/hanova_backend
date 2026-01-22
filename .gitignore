@@ -66,3 +66,8 @@ pnpm-lock.yaml
 
 # System Files
 Thumbs.db
+
+# Migrations
+migrations/
+*.migration.js
+*.migration.ts

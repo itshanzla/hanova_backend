@@ -29,7 +29,6 @@ async function createApp(): Promise<INestApplication> {
     }),
   );
 
-  // Configure CORS with allowed origins from environment variables
   const allowedOrigins = configService
     .get<string>('ALLOWED_ORIGINS')
     ?.split(',')
@@ -42,7 +41,6 @@ async function createApp(): Promise<INestApplication> {
     allowedHeaders: 'Content-Type,Authorization,Accept',
   });
 
-  // Swagger Configuration
   const backendUrl = configService.get<string>('BACKEND_URL') || 'http://localhost:3000';
 
   const config = new DocumentBuilder()
@@ -88,7 +86,6 @@ async function createApp(): Promise<INestApplication> {
   return app;
 }
 
-// Local development
 async function bootstrap() {
   const app = await createApp();
   const configService = app.get(ConfigService);
@@ -97,7 +94,6 @@ async function bootstrap() {
   console.log(`Application is running on: http://localhost:${port}`);
 }
 
-// Vercel serverless handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const app = await createApp();
   await app.init();
@@ -105,7 +101,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   return expressApp(req, res);
 }
 
-// Run bootstrap only in non-Vercel environment
 if (!process.env.VERCEL) {
   bootstrap();
 }
