@@ -65,8 +65,8 @@ export class EmailService {
           </div>
 
           <!-- Footer -->
-          <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-            <p style="color: #ffffff; margin: 0; font-size: 12px;">&copy; ${new Date().getFullYear()} Havnova. All rights reserved.</p>
+          <div style="background-color: #f8f8f8; padding: 20px; text-align: center;">
+            <p style="color: #000000; margin: 0; font-size: 12px;">&copy; ${new Date().getFullYear()} Havnova. All rights reserved.</p>
           </div>
         </div>
       `,
@@ -109,7 +109,7 @@ export class EmailService {
 
           <!-- Footer -->
           <div style="background-color: #f8f8f8; padding: 20px; text-align: center;">
-            <p style="color: #ffffff; margin: 0; font-size: 12px;">&copy; ${new Date().getFullYear()} Havnova. All rights reserved.</p>
+            <p style="color: #000000; margin: 0; font-size: 12px;">&copy; ${new Date().getFullYear()} Havnova. All rights reserved.</p>
           </div>
         </div>
       `,
