@@ -1,7 +1,11 @@
 import {
   Controller,
   Get,
+  Delete,
+  Param,
   UseGuards,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -69,5 +73,50 @@ export class UserController {
   async getAllUsers(@CurrentUser() currentUser: any) {
     const users = await this.userService.findAllExcept(currentUser.userId);
     return ApiResponse.SUCCESS(users, 'Users retrieved successfully');
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete(':id')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Delete a user (Admin only)' })
+  @SwaggerApiResponse({
+    status: 200,
+    description: 'User deleted successfully',
+    schema: {
+      example: {
+        status: 200,
+        response: 'OK',
+        message: 'User deleted successfully',
+        data: null,
+      },
+    },
+  })
+  @SwaggerApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @SwaggerApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required or cannot delete yourself',
+  })
+  @SwaggerApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async deleteUser(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: any,
+  ) {
+    if (id === currentUser.userId) {
+      throw new ForbiddenException('You cannot delete your own account');
+    }
+
+    const deleted = await this.userService.delete(id);
+    if (!deleted) {
+      throw new NotFoundException('User not found');
+    }
+
+    return ApiResponse.SUCCESS(null, 'User deleted successfully');
   }
 }

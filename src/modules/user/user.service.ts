@@ -45,4 +45,9 @@ export class UserService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async delete(id: string): Promise<boolean> {
+    const result = await this.userRepository.delete(id);
+    return result.affected !== 0;
+  }
 }
