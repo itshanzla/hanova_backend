@@ -47,6 +47,17 @@ async function createApp(): Promise<INestApplication> {
     .setTitle('Havnova API')
     .setDescription(
       `Havnova Backend API Documentation\n\n` +
+        `## Roles\n` +
+        `- **HOST** - Creates and manages rental listings\n` +
+        `- **ADMIN** - Manages all listings and discounts\n` +
+        `- **USER** - Views published listings\n\n` +
+        `## Listing Creation Flow\n` +
+        `1. Create a draft listing (POST /listings)\n` +
+        `2. Complete Step 1: Property Details\n` +
+        `3. Complete Step 2: Amenities, Safety & Media\n` +
+        `4. Complete Step 3: Booking & Pricing\n` +
+        `5. (Optional) Step 4: Apply Discounts\n` +
+        `6. Publish the listing\n\n` +
         `**Social Login URLs:**\n` +
         `- Google Login: [${backendUrl}/auth/google](${backendUrl}/auth/google)\n` +
         `- Facebook Login: [${backendUrl}/auth/facebook](${backendUrl}/auth/facebook)`,
@@ -57,13 +68,15 @@ async function createApp(): Promise<INestApplication> {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
+        name: 'Authorization',
+        description: 'Enter your JWT access token',
         in: 'header',
       },
-      'JWT-auth',
     )
     .addTag('Authentication', 'User authentication and authorization endpoints')
+    .addTag('Listings (Host)', 'Host endpoints for creating and managing rental listings')
+    .addTag('Admin - Listings & Discounts', 'Admin endpoints for managing all listings and discounts')
+    .addTag('Public - Listings', 'Public endpoints for viewing published listings')
     .addTag('Admin', 'Admin-specific endpoints (User management)')
     .build();
 

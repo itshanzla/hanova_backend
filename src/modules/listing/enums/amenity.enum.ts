@@ -1,0 +1,16 @@
+export enum Amenity {
+  POOL = 'pool',
+  HOT_TUB = 'hot_tub',
+  PATIO = 'patio',
+  BBQ_GRILL = 'bbq_grill',
+  OUTDOOR_DINING = 'outdoor_dining',
+  FIRE_PIT = 'fire_pit',
+  POOL_TABLE = 'pool_table',
+  INDOOR_FIREPLACE = 'indoor_fireplace',
+  PIANO = 'piano',
+  EXERCISE = 'exercise',
+  LAKE_ACCESS = 'lake_access',
+  BEACH_ACCESS = 'beach_access',
+  SKI_IN_OUT = 'ski_in_out',
+  OUTDOOR_SHOWER = 'outdoor_shower',
+}
