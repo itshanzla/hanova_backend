@@ -30,16 +30,25 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
+  private getJwtSecret(): string {
+    return (
+      process.env.JWT_SECRET ||
+      this.configService.get<string>('JWT_SECRET') ||
+      'default-secret'
+    );
+  }
+
   private generateTokens(userId: string, email: string, role: string) {
     const payload = { sub: userId, email, role };
+    const secret = this.getJwtSecret();
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET') || 'default-secret',
+      secret,
       expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION') || '15m',
     } as any);
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET') || 'default-secret',
+      secret,
       expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION') || '7d',
     } as any);
 
@@ -157,7 +166,7 @@ export class AuthService {
 
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get<string>('JWT_SECRET'),
+        secret: this.getJwtSecret(),
       });
 
       const user = await this.userService.findById(payload.sub);

@@ -252,9 +252,10 @@ export class AuthController {
     description: 'Unauthorized - Invalid or missing token',
   })
   async getProfile(@CurrentUser() user: any) {
-    return this.authService.getProfile(user.userId);
+    return this.authService.getProfile(user.id);
   }
 
+  
   @Get('google')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Initiate Google OAuth login (redirects to Google)' })
