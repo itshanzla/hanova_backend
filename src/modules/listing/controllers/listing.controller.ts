@@ -8,8 +8,13 @@ import {
   Body,
   UseGuards,
   ParseUUIDPipe,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -17,13 +22,17 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { UserRole } from '../../user/enums/role.enum';
 import { User } from '../../user/entities/user.entity';
 import { ListingService } from '../services/listing.service';
+import type { CloudinaryUploadResult } from '../../../common/cloudinary/cloudinary.service';
 import {
   Step1PropertyDetailsDto,
   Step2AmenitiesMediaDto,
   Step3BookingPricingDto,
   Step4DiscountsDto,
 } from '../dto';
-import { ApiResponse as ApiResponseUtil } from '../../../utils/apiResponse';
+import {
+  ApiResponse as ApiResponseUtil,
+  type ApiResponsePayload,
+} from '../../../utils/apiResponse';
 import {
   ApiCreateListing,
   ApiGetMyListings,
@@ -38,6 +47,7 @@ import {
   ApiPublishListing,
   ApiUnpublishListing,
   ApiDeleteListing,
+  ApiUploadListingPhotos,
 } from '../swagger';
 
 @ApiTags('Listings (Host)')
@@ -85,6 +95,30 @@ export class ListingController {
   // =====================
   // COMPLETE STEPS (POST - First time)
   // =====================
+
+  @Post('photos/upload')
+  @ApiUploadListingPhotos()
+  @UseInterceptors(
+    FilesInterceptor('photos', 5, {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+        files: 5,
+      },
+      fileFilter: (_req, file, callback) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return callback(new BadRequestException('Only image files are allowed'), false);
+        }
+        return callback(null, true);
+      },
+    }),
+  )
+  async uploadListingPhotos(
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<ApiResponsePayload<CloudinaryUploadResult[]>> {
+    const uploads = await this.listingService.uploadListingPhotos(files);
+    return ApiResponseUtil.CREATED(uploads, 'Photos uploaded');
+  }
 
   @Post(':id/step-2')
   @ApiCompleteStep2()

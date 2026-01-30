@@ -16,6 +16,10 @@ import {
 } from '../dto';
 import { User } from '../../user/entities/user.entity';
 import { UserRole } from '../../user/enums/role.enum';
+import {
+  CloudinaryService,
+  type CloudinaryUploadResult,
+} from '../../../common/cloudinary/cloudinary.service';
 
 @Injectable()
 export class ListingService {
@@ -26,6 +30,7 @@ export class ListingService {
     private readonly photoRepository: Repository<ListingPhoto>,
     @InjectRepository(Discount)
     private readonly discountRepository: Repository<Discount>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   /**
@@ -165,6 +170,10 @@ export class ListingService {
     const amenities = dto.amenities || [];
     const safetyItems = dto.safetyItems || [];
 
+    if (dto.photos && dto.photos.length > 5) {
+      throw new BadRequestException('Maximum 5 photos allowed');
+    }
+
     // Handle photos: delete existing, then insert with raw SQL so listing_id is always set
     if (dto.photos && dto.photos.length > 0) {
       await this.photoRepository.delete({ listingId });
@@ -192,6 +201,18 @@ export class ListingService {
     });
 
     return this.findListingForHost(listingId, listing.hostId);
+  }
+
+  async uploadListingPhotos(files: Express.Multer.File[]): Promise<CloudinaryUploadResult[]> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No photos uploaded');
+    }
+
+    if (files.length > 5) {
+      throw new BadRequestException('Maximum 5 photos allowed');
+    }
+
+    return Promise.all(files.map((file) => this.cloudinaryService.uploadListingPhoto(file)));
   }
 
   /**

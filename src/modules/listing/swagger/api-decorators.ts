@@ -5,12 +5,14 @@ import {
   ApiBody,
   ApiParam,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import {
   LISTING_RESPONSE_EXAMPLE,
   LISTING_ARRAY_RESPONSE_EXAMPLE,
   DRAFT_LISTING_RESPONSE_EXAMPLE,
   DELETE_RESPONSE_EXAMPLE,
+  UPLOAD_PHOTOS_RESPONSE_EXAMPLE,
 } from './response-schemas';
 import {
   ValidationErrorResponse,
@@ -248,6 +250,44 @@ export function ApiCompleteStep2() {
       status: HttpStatus.NOT_FOUND,
       description: 'Listing not found',
       type: NotFoundErrorResponse,
+    }),
+    ...CommonHostErrors,
+  );
+}
+
+export function ApiUploadListingPhotos() {
+  return applyDecorators(
+    ApiBearerAuth(),
+    ApiOperation({
+      summary: 'Upload listing photos',
+      description:
+        'Uploads up to 5 images to Cloudinary and returns publicId + secureUrl for Step 2 payload.',
+    }),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          photos: {
+            type: 'array',
+            items: {
+              type: 'string',
+              format: 'binary',
+            },
+          },
+        },
+        required: ['photos'],
+      },
+    }),
+    ApiResponse({
+      status: HttpStatus.CREATED,
+      description: 'Photos uploaded successfully',
+      schema: { example: UPLOAD_PHOTOS_RESPONSE_EXAMPLE },
+    }),
+    ApiResponse({
+      status: HttpStatus.BAD_REQUEST,
+      description: 'Invalid files or upload limit exceeded',
+      type: BadRequestErrorResponse,
     }),
     ...CommonHostErrors,
   );

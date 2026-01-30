@@ -520,6 +520,18 @@ export const DRAFT_LISTING_RESPONSE_EXAMPLE = {
   },
 };
 
+export const UPLOAD_PHOTOS_RESPONSE_EXAMPLE = {
+  status: 201,
+  response: 'Created',
+  message: 'Photos uploaded',
+  data: [
+    {
+      publicId: 'listings/living-room-abc123',
+      secureUrl: 'https://res.cloudinary.com/demo/image/upload/v1/listings/living-room-abc123.jpg',
+    },
+  ],
+};
+
 export const DISCOUNT_RESPONSE_EXAMPLE = {
   status: 200,
   response: 'OK',
