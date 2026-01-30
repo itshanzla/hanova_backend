@@ -10,10 +10,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private configService: ConfigService,
     private userService: UserService,
   ) {
+    // Use same secret resolution as AuthService so token verification matches signing
+    const secret =
+      process.env.JWT_SECRET ||
+      configService.get<string>('JWT_SECRET') ||
+      'default-secret';
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'default-secret',
+      secretOrKey: secret,
     });
   }
 
@@ -24,6 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
-    return { userId: payload.sub, email: payload.email, role: payload.role };
+    // Use DB user so role is always current; matches User entity structure
+    return { id: user.id, email: user.email, role: user.role };
   }
 }

@@ -3,8 +3,63 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ConfigService } from '@nestjs/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+/** OpenAPI request body content for application/json */
+interface JsonContent {
+  schema?: unknown;
+  example?: unknown;
+  examples?: Record<string, { value?: unknown }>;
+}
+
+interface OperationWithRequestBody {
+  requestBody?: {
+    content?: {
+      'application/json'?: JsonContent;
+    };
+  };
+}
+
+/**
+ * Ensures every request body in the OpenAPI document has a default `example`
+ * so Swagger UI "Try it out" shows a pre-filled request payload.
+ */
+function patchRequestBodyExamples(document: Record<string, unknown>): void {
+  const paths = document.paths as Record<string, Record<string, OperationWithRequestBody>> | undefined;
+  if (!paths) return;
+
+  for (const pathKey of Object.keys(paths)) {
+    const pathItem = paths[pathKey];
+    if (!pathItem || typeof pathItem !== 'object') continue;
+
+    const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
+    for (const method of methods) {
+      const operation = pathItem[method];
+      if (!operation?.requestBody) continue;
+
+      const content = operation.requestBody.content;
+      if (!content) continue;
+
+      const jsonContent = content['application/json'];
+      if (!jsonContent) continue;
+
+      // Ensure Swagger UI "Try it out" shows a pre-filled request body: set top-level example from first example
+      if (jsonContent.example === undefined && jsonContent.examples && typeof jsonContent.examples === 'object') {
+        const firstKey = Object.keys(jsonContent.examples)[0];
+        const firstExample = firstKey ? jsonContent.examples[firstKey] : null;
+        if (firstExample && typeof firstExample === 'object' && 'value' in firstExample) {
+          jsonContent.example = firstExample.value;
+          // Some Swagger UI versions also use schema.example
+          if (jsonContent.schema && typeof jsonContent.schema === 'object' && !('$ref' in jsonContent.schema)) {
+            (jsonContent.schema as Record<string, unknown>).example = firstExample.value;
+          }
+        }
+      }
+    }
+  }
+}
 
 let app: INestApplication;
 
@@ -20,6 +75,7 @@ async function createApp(): Promise<INestApplication> {
   const configService = app.get(ConfigService);
 
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -47,6 +103,18 @@ async function createApp(): Promise<INestApplication> {
     .setTitle('Havnova API')
     .setDescription(
       `Havnova Backend API Documentation\n\n` +
+        `## Roles\n` +
+        `- **HOST** - Creates and manages rental listings with discounts\n` +
+        `- **USER** - Views published listings\n\n` +
+        `## Listing Creation Flow\n` +
+        `1. **POST /listings** - Create listing with Property Details (Step 1)\n` +
+        `2. **POST /listings/{id}/step-2** - Complete Step 2: Amenities, Safety & Media\n` +
+        `3. **POST /listings/{id}/step-3** - Complete Step 3: Booking & Pricing\n` +
+        `4. **POST /listings/{id}/step-4** - (Optional) Complete Step 4: Create Discounts\n` +
+        `5. **POST /listings/{id}/publish** - Publish the listing\n\n` +
+        `## Updating Steps\n` +
+        `Use **PATCH /listings/{id}/step-X** to update any completed step.\n\n` +
+        `**Request body & examples:** Click **Try it out** to see and edit the example payload.\n\n` +
         `**Social Login URLs:**\n` +
         `- Google Login: [${backendUrl}/auth/google](${backendUrl}/auth/google)\n` +
         `- Facebook Login: [${backendUrl}/auth/facebook](${backendUrl}/auth/facebook)`,
@@ -57,22 +125,30 @@ async function createApp(): Promise<INestApplication> {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
+        name: 'Authorization',
+        description: 'Enter your JWT access token',
         in: 'header',
       },
-      'JWT-auth',
     )
     .addTag('Authentication', 'User authentication and authorization endpoints')
-    .addTag('Admin', 'Admin-specific endpoints (User management)')
+    .addTag('Listings (Host)', 'Host endpoints for creating and managing rental listings with discounts')
+    .addTag('Public - Listings', 'Public endpoints for viewing published listings')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+
+  // Ensure request body examples are visible in Swagger UI "Try it out"
+  patchRequestBodyExamples(document as unknown as Record<string, unknown>);
+
   SwaggerModule.setup('api-docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
       tagsSorter: 'alpha',
       operationsSorter: 'alpha',
+      displayRequestDuration: true,
+      defaultModelExpandDepth: 2,
+      docExpansion: 'list',
+      tryItOutEnabled: true,
     },
     customCssUrl: [
       'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
