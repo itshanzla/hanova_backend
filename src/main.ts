@@ -165,9 +165,10 @@ async function createApp(): Promise<INestApplication> {
 async function bootstrap() {
   const app = await createApp();
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT') || 3000;
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  const portValue = configService.get<string>('PORT') ?? process.env.PORT ?? '3000';
+  const port = Number(portValue) || 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Application is running on: http://0.0.0.0:${port}`);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
